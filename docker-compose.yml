@@ -1,0 +1,62 @@
+# docker-compose.yml — local Bedrock test world + AI gateway
+#
+#   docker compose up -d --build
+#
+# Then mint a key and let your AI in:
+#   docker compose exec gateway node src/cli.js keys create --name "my-ai" --scopes bot:control,bot:command
+#
+# SECURITY NOTES (read before exposing to the internet):
+#   * ONLINE_MODE=false is set by default so bots on your LAN can join without
+#     Xbox Live accounts. Anyone on the LAN can then join too. Fine for a
+#     private test world — NOT fine for a public server.
+#   * DEFAULT_PLAYER_PERMISSION_LEVEL=operator means every bot (and every player)
+#     is a cheat operator. Great for demos, dangerous for real worlds.
+#   * For a real server: set ONLINE_MODE=true, BOT_AUTH=microsoft, permission
+#     level member, and grant each bot operator rights via its XUID (see README).
+
+services:
+  bds:
+    image: itzg/minecraft-bedrock-server:latest
+    container_name: minecarft-bds
+    restart: unless-stopped
+    stdin_open: true          # keep stdin open for the server console
+    tty: true
+    ports:
+      - "19132:19132/udp"     # Bedrock server port (UDP!)
+    environment:
+      EULA: "TRUE"
+      SERVER_NAME: "Minecraft AI World"
+      LEVEL_NAME: "aiworld"
+      GAMEMODE: "survival"             # creative for easier testing: GAMEMODE: "creative"
+      DIFFICULTY: "normal"
+      ALLOW_CHEATS: "true"             # required for bots to run /commands
+      ONLINE_MODE: "${ONLINE_MODE:-false}"
+      DEFAULT_PLAYER_PERMISSION_LEVEL: "${DEFAULT_PLAYER_PERMISSION_LEVEL:-operator}"
+      PLAYER_IDLE_TIMEOUT: "0"         # bots are dummies — never kick them for idling
+      # OPS: "2535415122243618"        # XUIDs of operator accounts (when ONLINE_MODE=true)
+    volumes:
+      - bds-data:/data
+
+  gateway:
+    build: .
+    container_name: minecarft-ai-gateway
+    restart: unless-stopped
+    ports:
+      - "3000:3000"           # HTTP API for your AI agents
+    environment:
+      BDS_HOST: "bds"
+      BDS_PORT: "19132"
+      BOT_AUTH: "${BOT_AUTH:-offline}"  # "microsoft" when ONLINE_MODE=true
+      DATA_DIR: "/data"
+      PROFILES_FOLDER: "/data/profiles"
+      RATE_LIMIT_PER_MIN: "120"
+      COMMAND_RATE_LIMIT_PER_MIN: "60"
+      MAX_BOTS: "10"
+    volumes:
+      - gateway-data:/data    # API key database + audit log + Xbox auth tokens
+    depends_on:
+      - bds
+
+volumes:
+  bds-data:
+  gateway-data:
