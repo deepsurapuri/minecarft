@@ -1,0 +1,30 @@
+{
+  "name": "minecarft-ai-gateway",
+  "version": "1.0.0",
+  "description": "HTTP control plane that lets AI agents with API keys join and administer a Minecraft Bedrock world",
+  "type": "module",
+  "engines": {
+    "node": ">=22.5.0"
+  },
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
+    "cli": "node src/cli.js",
+    "keys": "node src/cli.js keys",
+    "test": "node --test test/*.test.js"
+  },
+  "dependencies": {
+    "bedrock-protocol": "3.61.0",
+    "express": "4.22.3"
+  },
+  "keywords": [
+    "minecraft",
+    "bedrock",
+    "bds",
+    "ai",
+    "agent",
+    "bot",
+    "api-gateway"
+  ],
+  "license": "MIT"
+}
